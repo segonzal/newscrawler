@@ -15,4 +15,5 @@ class NewscrawlerPipeline:
     def process_item(self, item, spider):
         item['uid'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'])).replace('-', '')
         item['crawl_time'] = datetime.utcnow()
+        item['site_name'] = spider.name
         return item
