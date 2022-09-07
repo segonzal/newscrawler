@@ -7,27 +7,19 @@ from newscrawler.items import NewscrawlerItem
 from newscrawler.spiders.utils import *
 
 
-class ElmostradorSpider(CrawlSpider):
-    name = 'elmostrador'
-    allowed_domains = ['elmostrador.cl']
-    start_urls = ['https://www.elmostrador.cl/']
+class LaTerceraSpider(CrawlSpider):
+    name = 'latercera'
+    allowed_domains = ['latercera.com']
+    start_urls = ['https://www.latercera.com/']
 
     rules = (
-        Rule(LinkExtractor(allow=r'.*/\d{4}/\d{2}/\d{2}/.*', deny=[r'.*\.pdf$',
-                                                                   r'noticias/multimedia/.*']),
-             callback='parse_item', follow=True),
+        Rule(LinkExtractor(allow=r'.+/noticia/.*'), callback='parse_item', follow=True),
         Rule(LinkExtractor(allow=r'.*'), follow=True),
     )
 
     def parse_item(self, response):
         date = response.xpath('//meta[@property="article:published_time"]/@content').get()
-        locale = get_first_not_none(
-            response,
-            [
-                '//meta[@property="og:locale"]/@content',
-                '//html/@lang',
-            ]
-        ).get()
+        locale = response.xpath('//meta[@property="og:locale"]/@content').get()
         category = get_all(
             response,
             [
@@ -37,11 +29,11 @@ class ElmostradorSpider(CrawlSpider):
         )
         description = response.xpath('//meta[@property="og:description"]/@content').getall()
         item = NewscrawlerItem()
-        item['published_time'] = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
+        item['published_time'] = datetime.strptime(date[:19], "%Y-%m-%dT%H:%M:%S")
         item['locale'] = locale
         item['url'] = response.xpath('//meta[@property="og:url"]/@content').get()
         item['category'] = list(map(str.strip, category))
-        item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()
+        item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()[:-13]
         item['description'] = max(description, key=len)
-        item['content'] = response.css('div#noticia').get()
+        item['content'] = response.css('article div.single-content > p, div.header').get()
         return item

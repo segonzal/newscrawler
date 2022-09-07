@@ -19,3 +19,12 @@ def get_formatted_text(selector: TextResponse):
         text += ''.join(line.xpath('.//text()').getall()) + '\n'
     text = text.replace(u'\xa0', u' ')
     return text.strip()
+
+
+def remove_nodes(root, selectors):
+    for selector in selectors:
+        element = root.css(selector)
+        if element:
+            element = element[0].root
+            element.getparent().remove(element)
+    return root

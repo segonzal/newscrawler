@@ -9,9 +9,8 @@ from newscrawler.spiders.utils import *
 
 class LacuartaSpider(CrawlSpider):
     name = 'lacuarta'
-
-    start_urls = ['http://lacuarta.com/', 'https://archivo.lacuarta.com/']
     allowed_domains = ['lacuarta.com', 'archivo.lacuarta.com']
+    start_urls = ['http://lacuarta.com/', 'https://archivo.lacuarta.com/']
 
     rules = (
         Rule(LinkExtractor(allow=r'[a-zA-Z\-]+/noticia/.+'), callback='parse_item', follow=True),
@@ -62,7 +61,7 @@ class LacuartaSpider(CrawlSpider):
                 '//div[contains(@class, "nota-interior-tx")]',
                 '//div[contains(@class, "body")]/section',
             ]
-        )
+        ).get()
         item = NewscrawlerItem()
         item['published_time'] = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
         item['locale'] = locale
@@ -70,5 +69,5 @@ class LacuartaSpider(CrawlSpider):
         item['category'] = list(map(str.strip, category))
         item['title'] = title
         item['description'] = get_formatted_text(description) if description else ''
-        item['content'] = get_formatted_text(content)
+        item['content'] = content
         return item
