@@ -16,4 +16,5 @@ class NewscrawlerPipeline:
         item['uid'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'])).replace('-', '')
         item['crawl_time'] = datetime.utcnow()
         item['site_name'] = spider.name
+        item['category'] = list(map(str.lower, item['category'])
         return item
