@@ -36,5 +36,5 @@ class EmolSpider(CrawlSpider):
         item['category'] = list(map(str.strip, category))
         item['title'] = title
         item['description'] = description
-        item['content'] = response.css('div#cuDetalle_cuTexto_textoNoticia div').get()
+        item['content'] = [response.css('div#cuDetalle_cuTexto_textoNoticia div').get()]
         return item
