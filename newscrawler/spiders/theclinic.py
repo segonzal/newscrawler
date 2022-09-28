@@ -33,7 +33,6 @@ class TheclinicSpider(CrawlSpider):
                 '//h2[@class="seccion"]/a/@title',
             ]
         )
-        category = map(str.strip, category)
         category = map(lambda x: x[1:] if x.startswith('#') else x, category)
 
         author = response.css('span.autor>a::text').get() or response.css('span.autor::text').get()
