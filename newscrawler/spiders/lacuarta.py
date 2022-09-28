@@ -69,5 +69,5 @@ class LacuartaSpider(CrawlSpider):
         item['category'] = list(map(str.strip, category))
         item['title'] = title
         item['description'] = get_formatted_text(description) if description else ''
-        item['content'] = content
+        item['content'] = [content]
         return item

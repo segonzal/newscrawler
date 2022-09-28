@@ -14,6 +14,7 @@ class NewscrawlerItem(scrapy.Item):
     locale = scrapy.Field()
     url = scrapy.Field()
     category = scrapy.Field()
+    author = scrapy.Field()
     title = scrapy.Field()
     description = scrapy.Field()
     content = scrapy.Field()

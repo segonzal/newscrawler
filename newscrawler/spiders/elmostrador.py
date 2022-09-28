@@ -14,9 +14,10 @@ class ElmostradorSpider(CrawlSpider):
 
     rules = (
         Rule(LinkExtractor(allow=r'.*/\d{4}/\d{2}/\d{2}/.*', deny=[r'.*\.pdf$',
-                                                                   r'noticias/multimedia/.*']),
+                                                                   r'noticias/multimedia/.*',
+                                                                   r'noticias/mundo/.*']),
              callback='parse_item', follow=True),
-        Rule(LinkExtractor(allow=r'.*'), follow=True),
+        # Rule(LinkExtractor(allow=r'.*'), follow=True),
     )
 
     def parse_item(self, response):
@@ -36,12 +37,23 @@ class ElmostradorSpider(CrawlSpider):
             ]
         )
         description = response.xpath('//meta[@property="og:description"]/@content').getall()
+        author = response.xpath('//p[contains(@class, "autor-y-fecha")]//a/text()').get()
+        content = response.css('div#noticia>p,div#noticia>h3').getall()
+
+        line_to_delete = "<p><strong>También te puede interesar:</strong></p>"
+        if line_to_delete in content:
+            content.remove(line_to_delete)
+
+        if author in ['DW', 'Reuters', 'BBC News Mundo', 'EFE']:
+            return
+
         item = NewscrawlerItem()
+        item['author'] = author
         item['published_time'] = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
         item['locale'] = locale
         item['url'] = response.xpath('//meta[@property="og:url"]/@content').get()
         item['category'] = list(map(str.strip, category))
         item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()
         item['description'] = max(description, key=len)
-        item['content'] = response.css('div#noticia').get()
+        item['content'] = content
         return item

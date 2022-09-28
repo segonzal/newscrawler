@@ -35,5 +35,5 @@ class LaTerceraSpider(CrawlSpider):
         item['category'] = list(map(str.strip, category))
         item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()[:-13]
         item['description'] = max(description, key=len)
-        item['content'] = response.css('article div.single-content > p, div.header').get()
+        item['content'] = [response.css('article div.single-content > p, div.header').get()]
         return item
