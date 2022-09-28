@@ -44,6 +44,8 @@ class ElmostradorSpider(CrawlSpider):
         if line_to_delete in content:
             content.remove(line_to_delete)
 
+        content = [c.replace('<h3', '<h2').replace('</h3>', '</h2>') for c in content]
+
         if author in ['DW', 'Reuters', 'BBC News Mundo', 'EFE']:
             return
 
