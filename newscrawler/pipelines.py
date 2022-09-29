@@ -24,7 +24,8 @@ class NewscrawlerPipeline:
         item['category'] = list(category)
 
         content = ''.join(item['content'])
-        content = content.replace('\xa0', ' ')
+        for character in ['\xa0', '\xad']:
+            content = content.replace(character, ' ')
         content = markdownify(content, strip=['a', 'img'])
         item['content'] = content.strip()
 

@@ -42,7 +42,8 @@ class TheclinicSpider(CrawlSpider):
 
         content = response.css('div.the-content>p,div.the-content>h2').getall()
 
-        line_to_delete = '<p class="has-text-align-center"><strong>¡Por fin un Newsletter gratuito y de calidá!</strong></p>'
+        line_to_delete = '<p class="has-text-align-center"><strong>¡Por fin un Newsletter gratuito y de ' \
+                         'calidá!</strong></p> '
         if line_to_delete in content:
             content.remove(line_to_delete)
 
