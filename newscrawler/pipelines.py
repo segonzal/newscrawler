@@ -11,6 +11,8 @@ from datetime import datetime
 from itemadapter import ItemAdapter
 from markdownify import markdownify
 
+TRANSLATION_TABLE = str.maketrans('', '', '\xa0\xad')
+
 
 class NewscrawlerPipeline:
     def process_item(self, item, spider):
@@ -23,10 +25,6 @@ class NewscrawlerPipeline:
         category = map(str.lower, category)
         item['category'] = list(category)
 
-        content = ''.join(item['content'])
-        for character in ['\xa0', '\xad']:
-            content = content.replace(character, ' ')
-        content = markdownify(content, strip=['a', 'img'])
-        item['content'] = content.strip()
-
+        for key in ['title', 'description', 'content']:
+            item[key] = item[key].translate(TRANSLATION_TABLE).strip()
         return item
