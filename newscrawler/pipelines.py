@@ -13,7 +13,6 @@ from markdownify import markdownify
 
 TRANSLATION_TABLE = str.maketrans('', '', '\xa0\xad')
 
-
 class NewscrawlerPipeline:
     def process_item(self, item, spider):
         item['uid'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'])).replace('-', '')
@@ -24,6 +23,8 @@ class NewscrawlerPipeline:
         category = map(str.strip, category)
         category = map(str.lower, category)
         item['category'] = list(category)
+
+        item['content'] = markdownify(item['content'], strip=['a', 'img', 'table'])
 
         for key in ['title', 'description', 'content']:
             item[key] = item[key].translate(TRANSLATION_TABLE).strip()

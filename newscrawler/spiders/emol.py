@@ -47,7 +47,7 @@ class EmolSpider(CrawlSpider):
             s.extract()
         for br in content.find_all('br'):
             br.replace_with('\n')
-        content = content.get_text()
+        content = str(content)
 
         item = NewscrawlerItem()
         item['author'] = author
