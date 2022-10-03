@@ -55,5 +55,5 @@ class TheclinicSpider(CrawlSpider):
         item['category'] = list(category)
         item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()[:-13]
         item['description'] = response.css('p.bajada::text').get()
-        item['content'] = content
+        item['content'] = ''.join(content)
         return item

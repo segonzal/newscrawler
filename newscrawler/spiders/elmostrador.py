@@ -57,5 +57,5 @@ class ElmostradorSpider(CrawlSpider):
         item['category'] = list(map(str.strip, category))
         item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()
         item['description'] = max(description, key=len)
-        item['content'] = content
+        item['content'] = ''.join(content)
         return item
