@@ -27,5 +27,6 @@ class NewscrawlerPipeline:
         item['content'] = markdownify(item['content'], strip=['a', 'img', 'table'])
 
         for key in ['title', 'description', 'content']:
-            item[key] = item[key].translate(TRANSLATION_TABLE).strip()
+            if item[key] is not None:
+                item[key] = item[key].translate(TRANSLATION_TABLE).strip()
         return item

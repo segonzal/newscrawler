@@ -92,6 +92,6 @@ FEEDS = {
         'format': 'jsonlines',
         'encoding': 'utf8',
         'store_empty': False,
-        'overwrite': True,
+        'overwrite': False,
     },
 }

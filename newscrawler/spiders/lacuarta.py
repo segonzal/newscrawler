@@ -15,7 +15,7 @@ class LacuartaSpider(CrawlSpider):
 
     rules = (
         Rule(LinkExtractor(allow=r'[a-zA-Z\-]+/noticia/.+'), callback='parse_item', follow=True),
-        # Rule(LinkExtractor(allow=r'.*'), follow=True),
+        Rule(LinkExtractor(allow=r'.*'), follow=True),
     )
 
     def parse_item(self, response):

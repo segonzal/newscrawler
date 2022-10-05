@@ -14,7 +14,8 @@ class TheclinicSpider(CrawlSpider):
 
     # https://www.theclinic.cl/2022/09/20/boric-nueva-york-espana-allende-onu/
     rules = (
-        Rule(LinkExtractor(allow=r'\d{4}/\d{2}/\d{2}/.*'), callback='parse_item', follow=True),
+        Rule(LinkExtractor(allow=r'\d{4}/\d{2}/\d{2}/.*', deny=[r'media/.*',
+                                                                ]), callback='parse_item', follow=True),
     )
 
     def parse_item(self, response):
@@ -47,13 +48,22 @@ class TheclinicSpider(CrawlSpider):
         if line_to_delete in content:
             content.remove(line_to_delete)
 
+        title = response.xpath('//meta[@property="og:title"]/@content').get()[:-13]
+        description = response.css('p.bajada::text').get()
+        content = ''.join(content)
+
+        if title is None or description is None or content is None:
+            return
+
         item = NewscrawlerItem()
         item['author'] = author
         item['published_time'] = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
         item['locale'] = response.xpath('//meta[@property="og:locale"]/@content').get()
         item['url'] = response.xpath('//meta[@property="og:url"]/@content').get()
         item['category'] = list(category)
-        item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()[:-13]
-        item['description'] = response.css('p.bajada::text').get()
-        item['content'] = ''.join(content)
+        item['title'] = title
+        item['description'] = description
+        item['content'] = content
+
+
         return item

@@ -19,7 +19,7 @@ class EmolSpider(CrawlSpider):
                                   r'noticias/Deportes/\d{4}/\d{2}/\d{2}/\d+/.*',
                                   r'noticias/Espectaculos/\d{4}/\d{2}/\d{2}/\d+/.*',
                                   ]), callback='parse_item', follow=True),
-        # Rule(LinkExtractor(allow=r'.*'), follow=True),
+        Rule(LinkExtractor(allow=r'sitemap/.*'), follow=True),
     )
 
     def parse_item(self, response):
@@ -36,12 +36,14 @@ class EmolSpider(CrawlSpider):
 
         author = response.css('div.info-notaemol-porfecha a::text').get() or \
                  response.css('div.info-notaemol-porfecha::text').get()
-        author = author[author.rfind('|') + 1:].strip()
-
-        if any([author.startswith(c) for c in ['AFP', 'La Nación', 'Aton']]):
-            return
+        if author is not None:
+            author = author[author.rfind('|') + 1:].strip()
 
         content = response.css('div#cuDetalle_cuTexto_textoNoticia').get()
+
+        if content is None:
+            return
+
         content = BeautifulSoup(content)
         for s in content.find_all('script'):
             s.extract()

@@ -14,8 +14,10 @@ class ElmostradorSpider(CrawlSpider):
 
     rules = (
         Rule(LinkExtractor(allow=r'.*/\d{4}/\d{2}/\d{2}/.*', deny=[r'.*\.pdf$',
+                                                                   r'tv/.*',
                                                                    r'noticias/multimedia/.*',
-                                                                   r'noticias/mundo/.*']),
+                                                                   r'noticias/mundo/.*',
+                                                                   ]),
              callback='parse_item', follow=True),
         # Rule(LinkExtractor(allow=r'.*'), follow=True),
     )
@@ -46,7 +48,7 @@ class ElmostradorSpider(CrawlSpider):
 
         content = [c.replace('<h3', '<h2').replace('</h3>', '</h2>') for c in content]
 
-        if author in ['DW', 'Reuters', 'BBC News Mundo', 'EFE']:
+        if author in ['DW', 'Reuters', 'BBC News Mundo', 'EFE', 'El Mostrador/ EFE']:
             return
 
         item = NewscrawlerItem()
