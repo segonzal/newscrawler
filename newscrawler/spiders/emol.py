@@ -1,10 +1,7 @@
-from datetime import datetime
-
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 
 from newscrawler.items import NewscrawlerItem
-from newscrawler.spiders.utils import *
 
 from bs4 import BeautifulSoup
 
@@ -12,51 +9,63 @@ from bs4 import BeautifulSoup
 class EmolSpider(CrawlSpider):
     name = 'emol'
     allowed_domains = ['emol.com']
-    start_urls = ['https://www.emol.com/']
+    start_urls = ['https://www.emol.com/sitemap/']
 
     rules = (
-        Rule(LinkExtractor(allow=[r'noticias/Nacional/\d{4}/\d{2}/\d{2}/\d+/.*',
-                                  r'noticias/Deportes/\d{4}/\d{2}/\d{2}/\d+/.*',
-                                  r'noticias/Espectaculos/\d{4}/\d{2}/\d{2}/\d+/.*',
-                                  ]), callback='parse_item', follow=True),
-        Rule(LinkExtractor(allow=r'sitemap/.*'), follow=True),
+        Rule(LinkExtractor(
+            allow=[r'noticias/' + section + r'/\d{4}/\d{2}/\d{2}/\d+/[\da-zA-Z\-]+\.html' for section in [
+                r'360',
+                r'Autos',
+                r'Cultura-y-Espectaculos',
+                r'[Dd]eportes',
+                r'[Ee]conomia',
+                r'Espectaculos',
+                r'[Ii]nternacional',
+                r'magazine',
+                r'Motores',
+                r'[Nn]acional',
+                r'[Tt]ecnologia',
+                r'Tendencias',
+                r'todas',
+            ]],
+            deny=[r'noticias/' + section + r'/\d{4}/\d{2}/\d{2}/\d+/[\da-zA-Z\-]+\.html' for section in [
+            ]]), callback='parse_item', follow=False),
+        Rule(LinkExtractor(
+            allow=[
+                r'sitemap/noticias/\d{4|/index.html',
+                r'sitemap/noticias/\d{4}/emol_noticias.*\.html',
+            ],
+            deny=[
+                r'sitemap/noticias/\d{4}/emol_videos.*\.html',
+                r'sitemap/noticias/\d{4}/emol_fotos.*\.html',
+            ]), follow=True)
     )
 
     def parse_item(self, response):
-        date = response.xpath('//meta[@property="article:published_time"]/@content').get()
-        locale = response.xpath('//meta[@property="og:locale"]/@content').get()
-        category = get_all(
-            response,
-            [
-                '//meta[@property="article:section"]/@content',
-            ]
-        )
-        title = response.xpath('//meta[@property="og:title"]/@content').get()[:-11]
-        description = response.xpath('//meta[@property="og:description"]/@content').get()
+        soup = BeautifulSoup(response.body)
 
-        author = response.css('div.info-notaemol-porfecha a::text').get() or \
-                 response.css('div.info-notaemol-porfecha::text').get()
-        if author is not None:
-            author = author[author.rfind('|') + 1:].strip()
-
-        content = response.css('div#cuDetalle_cuTexto_textoNoticia').get()
-
-        if content is None:
+        # Server Error
+        if soup.find('title').get_text() == "Object reference not set to an instance of an object.":
             return
 
-        content = BeautifulSoup(content)
-        for s in content.find_all('script'):
-            s.extract()
-        for br in content.find_all('br'):
-            br.replace_with('\n')
-        content = str(content)
+        nota_info = soup.find('div', class_='info-notaemol-porfecha')
+
+        if nota_info is None:
+            return
+
+        published_time = soup.find('meta', property='article:published_time').attrs['content']
+        url = response.url
+        author = nota_info.get_text().split('|')[-1].strip()
+        title = soup.find('h1', id='cuDetalle_cuTitular_tituloNoticia').get_text()
+        description = soup.find('h2', id='cuDetalle_cuTitular_bajadaNoticia').get_text()
+        content = [c.get_text(' ', strip=True) for c in soup.find('div', id='cuDetalle_cuTexto_textoNoticia').children]
+        content = [c for c in content if len(c) != 0]
+        content = '\n'.join(content)
 
         item = NewscrawlerItem()
+        item['published_time'] = published_time
+        item['url'] = url
         item['author'] = author
-        item['published_time'] = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
-        item['locale'] = locale
-        item['url'] = response.xpath('//meta[@property="og:url"]/@content').get()
-        item['category'] = list(map(str.strip, category))
         item['title'] = title
         item['description'] = description
         item['content'] = content

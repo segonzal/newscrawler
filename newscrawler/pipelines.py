@@ -8,25 +8,13 @@
 import uuid
 from datetime import datetime
 
-from itemadapter import ItemAdapter
-from markdownify import markdownify
-
 TRANSLATION_TABLE = str.maketrans('', '', '\xa0\xad')
+
 
 class NewscrawlerPipeline:
     def process_item(self, item, spider):
         item['uid'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'])).replace('-', '')
-        item['crawl_time'] = datetime.utcnow()
+        item['crawl_time'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
         item['site_name'] = spider.name
-
-        category = item['category']
-        category = map(str.strip, category)
-        category = map(str.lower, category)
-        item['category'] = list(category)
-
-        item['content'] = markdownify(item['content'], strip=['a', 'img', 'table'])
-
-        for key in ['title', 'description', 'content']:
-            if item[key] is not None:
-                item[key] = item[key].translate(TRANSLATION_TABLE).strip()
+        item['content'] = item['content'].translate(TRANSLATION_TABLE).strip()
         return item

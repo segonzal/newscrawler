@@ -93,5 +93,8 @@ FEEDS = {
         'encoding': 'utf8',
         'store_empty': False,
         'overwrite': False,
+        'item_export_kwargs': {
+           'export_empty_fields': False,
+        },
     },
 }
