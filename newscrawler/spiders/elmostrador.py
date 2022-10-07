@@ -1,10 +1,9 @@
-from datetime import datetime
-
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 
+from bs4 import BeautifulSoup
+
 from newscrawler.items import NewscrawlerItem
-from newscrawler.spiders.utils import *
 
 
 class ElmostradorSpider(CrawlSpider):
@@ -13,51 +12,52 @@ class ElmostradorSpider(CrawlSpider):
     start_urls = ['https://www.elmostrador.cl/']
 
     rules = (
-        Rule(LinkExtractor(allow=r'.*/\d{4}/\d{2}/\d{2}/.*', deny=[r'.*\.pdf$',
-                                                                   r'tv/.*',
-                                                                   r'noticias/multimedia/.*',
-                                                                   r'noticias/mundo/.*',
-                                                                   ]),
-             callback='parse_item', follow=True),
-        # Rule(LinkExtractor(allow=r'.*'), follow=True),
+        Rule(LinkExtractor(
+            allow=[r'[a-z\d\-]+/(?:[a-z\d\-]+/)\d{4}/\d{2}/\d{2}/[a-zA-Z\d\-]+/$'],
+            deny=[r'tv/.*', r'.*\.pdf$']),
+            callback='parse_item', follow=True),
+        Rule(LinkExtractor(
+            allow=[r'[a-z\d\-]+/(?:[a-zA-Z\d\-]+/)?(?:page/\d+/)?$']), follow=True),
     )
 
     def parse_item(self, response):
-        date = response.xpath('//meta[@property="article:published_time"]/@content').get()
-        locale = get_first_not_none(
-            response,
-            [
-                '//meta[@property="og:locale"]/@content',
-                '//html/@lang',
-            ]
-        ).get()
-        category = get_all(
-            response,
-            [
-                '//meta[@property="article:tag"]/@content',
-                '//meta[@property="article:section"]/@content',
-            ]
-        )
-        description = response.xpath('//meta[@property="og:description"]/@content').getall()
-        author = response.xpath('//p[contains(@class, "autor-y-fecha")]//a/text()').get()
-        content = response.css('div#noticia>p,div#noticia>h3').getall()
+        soup = BeautifulSoup(response.body)
 
-        line_to_delete = "<p><strong>También te puede interesar:</strong></p>"
-        if line_to_delete in content:
-            content.remove(line_to_delete)
+        published_time = soup.find('meta', property='article:published_time').attrs['content'][:19]
+        url = response.url
+        author = soup.find('p', class_='autor-y-fecha').find('span').get_text()
+        title = soup.find('section', class_='datos-noticias').find('h2').get_text(strip=True)
+        description = soup.find('section', class_='noticia-single-post').find('figcaption').get_text(strip=True)
+        content = soup.find('div', id='noticia')
 
-        content = [c.replace('<h3', '<h2').replace('</h3>', '</h2>') for c in content]
+        # Delete unwanted elements
+        related_title = content.find('strong', text='También te puede interesar:')
+        related_links = content.find_all('a', rel='noopener')
+        gnews = content.find('div', class_='gnews-container')
+        style = content.find('style')
 
-        if author in ['DW', 'Reuters', 'BBC News Mundo', 'EFE', 'El Mostrador/ EFE']:
-            return
+        if related_title is not None:
+            related_title.decompose()
+
+        if related_links is not None:
+            for link in related_links:
+                link.decompose()
+
+        if gnews is not None:
+            gnews.decompose()
+
+        if style is not None:
+            style.decompose()
+
+        content = [c.get_text(' ', strip=True) for c in content.children]
+        content = [c for c in content if len(c) != 0]
+        content = '\n'.join(content)
 
         item = NewscrawlerItem()
+        item['published_time'] = published_time
+        item['url'] = url
         item['author'] = author
-        item['published_time'] = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
-        item['locale'] = locale
-        item['url'] = response.xpath('//meta[@property="og:url"]/@content').get()
-        item['category'] = list(map(str.strip, category))
-        item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()
-        item['description'] = max(description, key=len)
-        item['content'] = ''.join(content)
+        item['title'] = title
+        item['description'] = description
+        item['content'] = content
         return item
