@@ -13,23 +13,8 @@ class EmolSpider(CrawlSpider):
 
     rules = (
         Rule(LinkExtractor(
-            allow=[r'noticias/' + section + r'/\d{4}/\d{2}/\d{2}/\d+/[\da-zA-Z\-]+\.html' for section in [
-                r'360',
-                r'Autos',
-                r'Cultura-y-Espectaculos',
-                r'[Dd]eportes',
-                r'[Ee]conomia',
-                r'Espectaculos',
-                r'[Ii]nternacional',
-                r'magazine',
-                r'Motores',
-                r'[Nn]acional',
-                r'[Tt]ecnologia',
-                r'Tendencias',
-                r'todas',
-            ]],
-            deny=[r'noticias/' + section + r'/\d{4}/\d{2}/\d{2}/\d+/[\da-zA-Z\-]+\.html' for section in [
-            ]]), callback='parse_item', follow=False),
+            allow=[r'noticias/[a-zA-Z\d\-]+/\d{4}/\d{2}/\d{2}/\d+/[\da-zA-Z\-]+\.html']),
+            callback='parse_item', follow=False),
         Rule(LinkExtractor(
             allow=[
                 r'sitemap/noticias/\d{4|/index.html',
@@ -58,7 +43,8 @@ class EmolSpider(CrawlSpider):
         author = nota_info.get_text().split('|')[-1].strip()
         title = soup.find('h1', id='cuDetalle_cuTitular_tituloNoticia').get_text()
         description = soup.find('h2', id='cuDetalle_cuTitular_bajadaNoticia').get_text()
-        content = [c.get_text(' ', strip=True) for c in soup.find('div', id='cuDetalle_cuTexto_textoNoticia').children]
+        content = soup.find('div', id='cuDetalle_cuTexto_textoNoticia')
+        content = [c.get_text(' ', strip=True) for c in content.children]
         content = [c for c in content if len(c) != 0]
         content = '\n'.join(content)
 
