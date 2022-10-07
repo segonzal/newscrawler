@@ -15,7 +15,7 @@ class ElmostradorSpider(CrawlSpider):
         Rule(LinkExtractor(
             allow=[r'[a-z\d\-]+/(?:[a-z\d\-]+/)\d{4}/\d{2}/\d{2}/[a-zA-Z\d\-]+/$'],
             deny=[r'tv/.*', r'.*\.pdf$']),
-            callback='parse_item', follow=True),
+            callback='parse_item', follow=False),
         Rule(LinkExtractor(
             allow=[r'[a-z\d\-]+/(?:[a-zA-Z\d\-]+/)?(?:page/\d+/)?$']), follow=True),
     )
@@ -25,7 +25,7 @@ class ElmostradorSpider(CrawlSpider):
 
         published_time = soup.find('meta', property='article:published_time').attrs['content'][:19]
         url = response.url
-        author = soup.find('p', class_='autor-y-fecha').find('span').get_text()
+        author = soup.find('p', class_='autor-y-fecha').find('span').get_text(strip=True)
         title = soup.find('section', class_='datos-noticias').find('h2').get_text(strip=True)
         description = soup.find('section', class_='noticia-single-post').find('figcaption').get_text(strip=True)
         content = soup.find('div', id='noticia')

@@ -16,5 +16,6 @@ class NewscrawlerPipeline:
         item['site_name'] = spider.name
         item['uid'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'])).replace('-', '')
         item['crawl_time'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
-        item['content'] = item['content'].translate(TRANSLATION_TABLE).strip()
+        for key in ['author', 'title', 'description', 'content']:
+            item[key] = item[key].translate(TRANSLATION_TABLE).strip()
         return item

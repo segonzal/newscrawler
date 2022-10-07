@@ -38,11 +38,11 @@ class EmolSpider(CrawlSpider):
         if nota_info is None:
             return
 
-        published_time = soup.find('meta', property='article:published_time').attrs['content']
+        published_time = soup.find('meta', property='article:published_time').attrs['content'][:19]
         url = response.url
-        author = nota_info.get_text().split('|')[-1].strip()
-        title = soup.find('h1', id='cuDetalle_cuTitular_tituloNoticia').get_text()
-        description = soup.find('h2', id='cuDetalle_cuTitular_bajadaNoticia').get_text()
+        author = nota_info.get_text().split('|')[-1].strip(strip=True)
+        title = soup.find('h1', id='cuDetalle_cuTitular_tituloNoticia').get_text(strip=True)
+        description = soup.find('h2', id='cuDetalle_cuTitular_bajadaNoticia').get_text(strip=True)
         content = soup.find('div', id='cuDetalle_cuTexto_textoNoticia')
         content = [c.get_text(' ', strip=True) for c in content.children]
         content = [c for c in content if len(c) != 0]
