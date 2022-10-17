@@ -13,14 +13,12 @@ class LacuartaSpider(CrawlSpider):
 
     rules = (
         Rule(LinkExtractor(
-            allow=[r'[a-z\d\-]+/[a-z\d\-]+/[a-z\d\-]+/[A-Z\d]+/'],
+            allow=[r'[a-z\d\-]+/noticia/[a-z\d\-]+/[A-Z\d]+/'],
             deny_domains=['comerciante.lacuarta.com',
                           'constructor.lacuarta.com']),
             callback='parse_item', follow=True),
         Rule(LinkExtractor(
-            allow=[r'etiqueta/[a-z\d\-]*',
-                   r'categoria/noticias/[a-z\d\-]*',
-                   r'categoria/eventos/[a-z\d\-]*']),
+            allow=[r'[a-z\-\d]+(?:/[a-z\d\-]*)?/[a-z\d\-]*/(?:\d+/)?']),
             follow=True),
     )
 
@@ -31,7 +29,8 @@ class LacuartaSpider(CrawlSpider):
         url = response.url
         author = soup.find('div', class_='story-author').get_text(strip=True)
         title = soup.find('div', class_='story-headline').find('h1').get_text(strip=True)
-        description = soup.find('div', class_='story-subtitle').find('p').get_text(strip=True)
+        description = soup.find('div', class_='story-subtitle').find('p')
+        description = '' if description is None else description.get_text(strip=True)
         content = soup.find('div', class_='body').find('section')
 
         # Delete unwanted elements

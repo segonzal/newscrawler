@@ -27,7 +27,8 @@ class ElmostradorSpider(CrawlSpider):
         url = response.url
         author = soup.find('p', class_='autor-y-fecha').find('span').get_text(strip=True)
         title = soup.find('section', class_='datos-noticias').find('h2').get_text(strip=True)
-        description = soup.find('section', class_='noticia-single-post').find('figcaption').get_text(strip=True)
+        description = soup.find('section', class_='noticia-single-post').find('figcaption')
+        description = '' if description is None else description.get_text(strip=True)
         content = soup.find('div', id='noticia')
 
         # Delete unwanted elements

@@ -1,10 +1,16 @@
-from datetime import datetime
-
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 
 from newscrawler.items import NewscrawlerItem
-from newscrawler.spiders.utils import *
+
+from bs4 import BeautifulSoup
+
+
+def apply_priority(priority):
+    def process_request(request, response):
+        return request.replace(priority=priority)
+
+    return process_request
 
 
 class LaTerceraSpider(CrawlSpider):
@@ -13,42 +19,48 @@ class LaTerceraSpider(CrawlSpider):
     start_urls = ['https://www.latercera.com/']
 
     rules = (
-        Rule(LinkExtractor(allow=r'.+/noticia/.*', deny=[r'la-tercera-tv/noticia/.*',
-                                                         r'mundo/noticia/.*']),
-             callback='parse_item', follow=True),
-        # Rule(LinkExtractor(allow=r'.*'), follow=True),
+        Rule(LinkExtractor(
+            allow=[r'[a-z\d\-]+/noticia/[a-z\-\d]+/[A-Z\d]+'],
+            deny=[r'la-tercera-tv/noticia/[a-z\-\d]+/[A-Z\d]+'],
+            deny_domains=['glamorama.latercera.com',
+                          'laboratorio.latercera.com']),
+            process_request=apply_priority(10),
+            callback='parse_item', follow=True),
+        Rule(LinkExtractor(
+            allow=[r'autor/[a-z\-\d]+/(?:/page/\d+)?',
+                   r'etiqueta/[a-z\-\d]+(?:/page/\d+)?',
+                   r'canal/[a-z\-\d]+']),
+            process_request=apply_priority(5),
+            follow=True),
     )
 
     def parse_item(self, response):
-        date = response.xpath('//meta[@property="article:published_time"]/@content').get()
-        locale = response.xpath('//meta[@property="og:locale"]/@content').get()
-        category = get_all(
-            response,
-            [
-                '//meta[@property="article:tag"]/@content',
-                '//meta[@property="article:section"]/@content',
-            ]
-        )
-        description = response.xpath('//meta[@property="og:description"]/@content').getall()
+        soup = BeautifulSoup(response.body)
 
-        content = response.css('article div.single-content')
-        content = content.css('p.paragraph, div.header').getall()
-        # , div.header
+        header = soup.find('div', class_='titulares')
 
-        if '</div></h2></div>' in content[-1]:
-            content = content[:-2]
+        published_time = soup.find('meta', property='article:published_time').attrs['content'][:19]
+        url = response.url
+        author = soup.find('div', class_='author').find('div', class_='name').get_text(strip=True)
+        title = header.find('h1').get_text(strip=True)
+        description = header.find('p', class_='excerpt')
+        description = '' if description is None else description.get_text(strip=True)
+        content = soup.find('div', class_='single-content')
 
-        author = ' '.join(response.css('div.author div.name *::text').getall())
-        if author in ['Agencia Bloomberg', 'EFE', 'Europa Press']:
+        if content is None:
             return
 
+        content = content.find_all(['p', 'div'], class_=['paragraph', 'header'])
+
+        content = [c.get_text(' ', strip=True) for c in content]
+        content = [c for c in content if len(c) != 0]
+        content = '\n'.join(content)
+
         item = NewscrawlerItem()
+        item['published_time'] = published_time
+        item['url'] = url
         item['author'] = author
-        item['published_time'] = datetime.strptime(date[:19], "%Y-%m-%dT%H:%M:%S")
-        item['locale'] = locale
-        item['url'] = response.xpath('//meta[@property="og:url"]/@content').get()
-        item['category'] = list(map(str.strip, category))
-        item['title'] = response.xpath('//meta[@property="og:title"]/@content').get()[:-13]
-        item['description'] = max(description, key=len)
-        item['content'] = ''.join(content)
+        item['title'] = title
+        item['description'] = description
+        item['content'] = content
         return item
